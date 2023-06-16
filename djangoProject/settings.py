@@ -25,20 +25,34 @@ SECRET_KEY = 'django-insecure-uw)5m4^a(#(i+ssq3p48=pehclac!7zhn4wxocwhh%(ej(%w8@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.247.206']
+# ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.247.206']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.100.5']
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "CONFIG": {
+        #     "hosts": [("127.0.0.1", 6379), ("0.0.0.0", 6379), ("192.168.100.5", 6379)],
+        # },
+
+    }
+}
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'myimu.apps.MyimuConfig',
     'rest_framework',
+    'channels',
+    'myimu.apps.MyimuConfig',
 ]
 
 MIDDLEWARE = [
@@ -56,7 +70,7 @@ ROOT_URLCONF = 'djangoProject.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
+        'DIRS': [BASE_DIR / 'myimu/templates']
         ,
         'APP_DIRS': True,
         'OPTIONS': {
@@ -71,6 +85,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'djangoProject.wsgi.application'
+ASGI_APPLICATION = "djangoProject.asgi.application"
 
 
 # Database
@@ -137,10 +152,14 @@ REST_FRAMEWORK = {
     'rest_framework.pagination.PageNumberPagination',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    )
+    ),
+    'DATETIME_FORMAT': "%d-%m-%Y %H:%M:%S.%f",
+    # 'DEFAULT_AUTHENTICATION_CLASSES': [],
+    # 'DEFAULT_PERMISSION_CLASSES': [],
 }
 #
 #
@@ -149,7 +168,7 @@ REST_FRAMEWORK = {
 # SECURE_PROXY_SSL_HEADER         = None
 # SECURE_SSL_REDIRECT             = False
 # SESSION_COOKIE_SECURE           = False
-CSRF_COOKIE_SECURE              = False
+# CSRF_COOKIE_SECURE              = False
 # SECURE_HSTS_SECONDS             = None
 # SECURE_HSTS_INCLUDE_SUBDOMAINS  = False
 # SECURE_FRAME_DENY               = False
