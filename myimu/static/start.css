@@ -20,3 +20,14 @@ input{
 .stop{
 	background: #ff0000;
 }
+
+.calculate{
+	background: #ff9999;
+	color: darkblue;
+}
+
+ul li {
+	list-style-type: circle;
+	background: #ff9999;
+	color: darkblue;
+}
