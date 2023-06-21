@@ -1,6 +1,9 @@
-from . import models, serializers
+import matplotlib
 
-from django.views.generic import DetailView, TemplateView
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+
 from django.shortcuts import render, redirect
 from django.http.response import HttpResponse
 from rest_framework import viewsets
@@ -10,11 +13,8 @@ import numpy as np
 import math
 import statistics as stat
 from scipy.fftpack import fft
-import matplotlib
 
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg
+from . import models, serializers
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -33,12 +33,13 @@ def start(request):
 
 
 def calc_results():
-    time = []
-    vecA = []
-    vecG = []
-
     if models.SensorsValue.objects.all().exists():
+        time = []
+        vecA = []
+        vecG = []
+
         for x in models.SensorsValue.objects.all():
+            temp = []
             time.append(x.timer)
             temp = [x.accX, x.accY, x.accZ]
             num = math.sqrt(temp[0] ** 2 + temp[1] ** 2 + temp[2] ** 2)
@@ -46,13 +47,17 @@ def calc_results():
             temp = [x.gyrX, x.gyrY, x.gyrZ]
             num = math.sqrt(temp[0] ** 2 + temp[1] ** 2 + temp[2] ** 2)
             vecG.append(num)
-            temp = []
 
         n = len(vecA)
         dt = stat.mean(np.diff(time))
         fs = 1 / (dt / 1000)
         fs = fs.item()
-        freq = np.arange(0, fs / 2 + fs / len(vecA), fs / len(vecA))
+
+        startPoint = 0
+        step = fs / n
+        stop = (n - 1)
+        freq = np.linspace(startPoint, stop, num=n)
+        freq = freq * step
         yfAcc = fft(vecA)
         yfAcc = yfAcc.tolist()
         yfGyr = fft(vecG)
@@ -72,12 +77,7 @@ def calc_results():
             'powerGyr': powGyr,
         }
 
-        # print(time)
-
         return context
-
-    # return render(request, 'graph.html', context)
-    # return response
 
 
 def draw_graph(request):
@@ -87,9 +87,6 @@ def draw_graph(request):
         freq = context["frequency"]
         powAcc = context["powerAcc"]
         powGyr = context["powerGyr"]
-
-        # print(powAcc)
-        # print(freq)
 
         fig, ax = plt.subplots(1, 2, figsize=(15, 10))
         plt.subplots_adjust(wspace=0.8)
@@ -108,8 +105,6 @@ def draw_graph(request):
         ax[1].set_ylabel("Amplitude [deg/s]")
         ax[1].set_yscale("log")
 
-        # input()
-
         response = HttpResponse(
             content_type='image/png',
         )
@@ -120,6 +115,7 @@ def draw_graph(request):
         plt.close()
 
         return response
+
 
 def results(request):
     context = calc_results()
@@ -133,5 +129,5 @@ def delete_items(request):
     if queryset.exists():
         queryset.delete()
         with connection.cursor() as cursor:
-            cursor.execute("UPDATE sqlite_sequence SET seq = 1 WHERE name = 'myimu_sensorsvalue'")
+            cursor.execute("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'myimu_sensorsvalue'")
     return redirect('post-list')

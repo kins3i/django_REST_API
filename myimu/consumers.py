@@ -42,29 +42,20 @@ class PostConsumer(
     async def receive(self, text_data=None, bytes_data=None):
         incoming = json.loads(text_data)
         try:
-            incoming["action"]
-        except:
-            pass
-        else:
-            action = incoming["action"]
-
-        try:
-            incoming["request_id"]
-        except:
-            pass
-        else:
-            request_id = incoming["request_id"]
-
-        try:
-            incoming["data"]
+            incoming
         except NameError:
             print("Faulty data")
         else:
-            data = incoming["data"]
+            data = incoming
+            if (type(data) == list):
+                for x in data:
+                    m = models.SensorsValue(**x)
+                    await sync_to_async(m.save)()
+            else:
+                m = models.SensorsValue(**data)
+                await sync_to_async(m.save)()
 
-        m = models.SensorsValue(**data)
-        await sync_to_async(m.save)()
-        print("Message received")
+            print("Message received")
 
     @model_observer(models.SensorsValue)
     async def model_change(self, message, **kwargs):
@@ -79,29 +70,4 @@ class PostConsumer(
     async def disconnect(self, message):
         print("Disconnected")
         await super().disconnect(message)
-
-# class PostConsumer(GenericAsyncAPIConsumer):
-#     queryset = models.SensorsValue.objects.all()
-#     serializer_class = serializers.SensorsValueSerializer()
-#     authentication_classes = []  # disables authentication
-#     permission_classes = []
-#
-#     @model_observer(models.SensorsValue)
-#     async def add_data(
-#         self,
-#         message: serializers.SensorsValueSerializer,
-#         observer=None,
-#         subscribing_request_ids=[],
-#         **kwargs
-#     ):
-#         await self.send_json(dict(message.data))
-#
-#     @add_data.serializer
-#     def add_data(self, instance: models.SensorsValue, action, **kwargs) -> serializers.SensorsValueSerializer:
-#         """This will return the comment serializer"""
-#         return serializers.SensorsValueSerializer(instance)
-#
-#     @action()
-#     async def subscribe_data(self, request_id, **kwargs):
-#         await self.add_data.subscribe(request_id=request_id)
 
