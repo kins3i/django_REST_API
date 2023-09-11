@@ -1,14 +1,8 @@
 body {
-	height: 100vh;
 	background: #8f8f8f;
-	display: flex;
-	justify-content: center;
-	align-items: center;
 }
 
 input{
-	margin: 200px;
-	padding: 40px 80px;
 	border: none;
 	cursor: pointer;
 }
@@ -24,10 +18,23 @@ input{
 .calculate{
 	background: #ff9999;
 	color: darkblue;
+
 }
 
 ul li {
 	list-style-type: circle;
 	background: #ff9999;
 	color: darkblue;
+}
+
+.div {
+	margin: auto;
+	text-align: center;
+	width: 70%;
+	vertical-align: middle;
+	display: block;
+}
+
+.one {
+	display: inline-block;
 }

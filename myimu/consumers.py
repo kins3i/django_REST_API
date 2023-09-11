@@ -1,10 +1,6 @@
-import json
+import time
+import datetime
 
-from asgiref.sync import sync_to_async
-from django.core import serializers
-
-
-from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from djangochannelsrestframework.mixins import (
     ListModelMixin,
     RetrieveModelMixin,
@@ -13,61 +9,63 @@ from djangochannelsrestframework.mixins import (
     CreateModelMixin,
     DeleteModelMixin,
 )
+from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 
-from djangochannelsrestframework.observer import model_observer
-
-from . import models, serializers
+model_list = []
+filename = ''
 
 
 class PostConsumer(
-        ListModelMixin,
-        RetrieveModelMixin,
-        PatchModelMixin,
-        UpdateModelMixin,
-        CreateModelMixin,
-        DeleteModelMixin,
-        GenericAsyncAPIConsumer,):
-    queryset = models.SensorsValue.objects.all()
-    serializer_class = serializers.SensorsValueSerializer()
-    # permissions = (permissions.AllowAny,)
-
+    ListModelMixin,
+    RetrieveModelMixin,
+    PatchModelMixin,
+    UpdateModelMixin,
+    CreateModelMixin,
+    DeleteModelMixin,
+    GenericAsyncAPIConsumer):
     authentication_classes = []  # disables authentication
     permission_classes = []
 
     async def connect(self, **kwargs):
         await super().connect()
-        await self.model_change.subscribe()
+        # await self.model_change.subscribe()
+        global model_list
+        global filename
+        model_list = []
+        today = datetime.date.today()
+        now = datetime.datetime.now()
+        current_time = datetime.time(now.hour, now.minute)
+        name = datetime.datetime.combine(today, current_time)
+        print(name)
+        date_str = name.strftime("%d-%m-%Y_%H_%M")
+        filename = date_str + ".txt"
+        print(filename)
         print("Connected")
+        await self.send_json('message')
 
     async def receive(self, text_data=None, bytes_data=None):
-        incoming = json.loads(text_data)
-        try:
-            incoming
-        except NameError:
-            print("Faulty data")
-        else:
-            data = incoming
-            if (type(data) == list):
-                for x in data:
-                    m = models.SensorsValue(**x)
-                    await sync_to_async(m.save)()
-            else:
-                m = models.SensorsValue(**data)
-                await sync_to_async(m.save)()
-
-            print("Message received")
-
-    @model_observer(models.SensorsValue)
-    async def model_change(self, message, **kwargs):
-        print(message)
-        # await self.send_json(message) # send message back to sensor
-
-    @model_change.serializer
-    def model_serialize(self, instance, action, **kwargs):
-        # print(dict(data=serializers.SensorsValueSerializer(instance=instance).data, action=action.value))
-        return dict(data=serializers.SensorsValueSerializer(instance=instance).data, action=action.value)
+        start = time.time()
+        global model_list
+        global filename
+        separator = '\n'
+        model_list.append(text_data)
+        if len(model_list) >= 500:
+            await self.send_json('save')
+            long_str = separator.join(model_list)
+            long_str += '\n'
+            # file = open(filename, 'a')
+            with open(filename, 'a') as file:
+                file.write(long_str)
+            print("add to file time {}.".format((time.time() - start) * 1000))
+            model_list = []
+        if ((time.time() - start) * 1000) > 0.9:
+            print("time {}.".format((time.time() - start) * 1000))
+            # print("Message received")
 
     async def disconnect(self, message):
         print("Disconnected")
+        global model_list
+        model_list = []
+        global filename
+        filename = ''
         await super().disconnect(message)
-

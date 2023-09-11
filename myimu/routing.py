@@ -7,5 +7,5 @@ from . import consumers
 
 ws_urlpatterns = [
     re_path("", consumers.PostConsumer.as_asgi())
-    # url(r"ws/$", view_as_consumer(views.PostViewSet))
+    # re_path("", view_as_consumer(views.PostViewSet))
 ]

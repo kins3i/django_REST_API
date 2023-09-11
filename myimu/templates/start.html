@@ -1,18 +1,17 @@
-{% load static %}
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>START/STOP</title>
-    <link rel="stylesheet" href="{% static 'start.css' %}">
-</head>
-<body>
+{% block tytul %}Start Stop{% endblock %}
 
-    <form action="#" method="get">
-        <input type="submit" class="start" value="start" name="start">
-        <input type="submit" class="stop" value="stop" name="stop">
-    </form>
+{% block content %}
+
+    <div class = "justify-content-center form-group m-auto align-items-center d-flex h-100">
+        <div class="btn-group btn-group-lg">
+            <form action="#" method="get">
+                <input type="submit" class="btn btn-dark me-5" value="start" name="start">
+                <input type="submit" class="btn btn-dark ms-5" value="stop" name="stop">
+            </form>
+        </div>
+    </div>
 {#    <button class="start" onclick="startFc()">Start</button>#}
 {#    <button class="stop" onclick="StopFc()">STOP</button>#}
 {##}
@@ -25,5 +24,4 @@
 {#    }#}
 {#    </script>#}
 
-</body>
-</html>
+{% endblock %}

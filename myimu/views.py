@@ -1,6 +1,5 @@
 import matplotlib
 
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
@@ -12,9 +11,15 @@ from django.db import connection
 import numpy as np
 import math
 import statistics as stat
-from scipy.fftpack import fft
+from scipy import arange
+from scipy.fft import fft
+
+from datetime import date
+import os
+import json
 
 from . import models, serializers
+matplotlib.use('Agg')
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -32,41 +37,135 @@ def start(request):
     return render(request, "start.html")
 
 
-def calc_results():
-    if models.SensorsValue.objects.all().exists():
-        time = []
-        vecA = []
-        vecG = []
+def import_json(request):
+    today = date.today()
+    date_str = today.strftime("%d-%m-%Y")
+    filename = date_str + ".txt"
+    path = os.path.join(os.getcwd(), filename)
+    if os.path.isfile(path):
+        file = open(filename, 'r')
+        str_list = file.readlines()
+        json_list = []
+        for row in str_list:
+            json_row = json.loads(row)
+            json_list.append(json_row)
+        for j_row in json_list:
+            obj = serializers.SensorsValueSerializer(data=j_row)
+            if obj.is_valid():
+                obj.save()
+        return render(request, 'results.html')
+    return redirect('post-list')
 
-        for x in models.SensorsValue.objects.all():
-            temp = []
-            time.append(x.timer)
-            temp = [x.accX, x.accY, x.accZ]
-            num = math.sqrt(temp[0] ** 2 + temp[1] ** 2 + temp[2] ** 2)
+
+def get_file(request):
+    if request.method == 'POST' and request.FILES['myfile']:
+        myfile = request.FILES['myfile']
+        filename = myfile.name
+        request.session['myfilename'] = filename
+        return redirect('results')
+    return render(request, 'get_file.html')
+
+
+def results(request):
+    filename = request.session.get('myfilename')
+    freq_max = request.session.get('freq_max')
+    amp_mm = request.session.get('amp_mm')
+    context = {
+        'freq_max': freq_max,
+        'amp_mm': amp_mm,
+    }
+    if filename:
+        return render(request, 'results.html', context)
+    return redirect('post-list')
+
+
+def calc_results(myfilename):
+    filename = myfilename
+    path = os.path.join(os.getcwd(), filename)
+
+    time = []
+    vecA = []
+    vecG = []
+
+    if os.path.isfile(path):
+        file = open(filename, 'r')
+        str_list = file.readlines()
+        json_list = []
+        for row in str_list:
+            json_row = json.loads(row)
+            json_list.append(json_row)
+        for j_row in json_list:
+            time.append(j_row['timer'])
+            if (len(time) > 2) and (time[-1] - time[-2] != time[1] - time[0]):
+                time.pop()
+                break
+            accX = j_row['accX']
+            accY = j_row['accY']
+            accZ = j_row['accZ']
+            gyrX = j_row['gyrX']
+            gyrY = j_row['gyrY']
+            gyrZ = j_row['gyrZ']
+            tempA = [accX / 1000, accY / 1000, accZ / 1000]
+            num = math.sqrt(tempA[0] ** 2 + tempA[1] ** 2 + tempA[2] ** 2)
             vecA.append(num)
-            temp = [x.gyrX, x.gyrY, x.gyrZ]
-            num = math.sqrt(temp[0] ** 2 + temp[1] ** 2 + temp[2] ** 2)
+            tempG = [gyrX / 1000, gyrY / 1000, gyrZ / 1000]
+            num = math.sqrt(tempG[0] ** 2 + tempG[1] ** 2 + tempG[2] ** 2)
             vecG.append(num)
 
+        if len(vecA) % 2 != 0:
+            time.pop()
+            vecA.pop()
+            vecG.pop()
+
         n = len(vecA)
+        print(n)
         dt = stat.mean(np.diff(time))
         fs = 1 / (dt / 1000)
         fs = fs.item()
 
-        startPoint = 0
-        step = fs / n
-        stop = (n - 1)
-        freq = np.linspace(startPoint, stop, num=n)
-        freq = freq * step
-        yfAcc = fft(vecA)
-        yfAcc = yfAcc.tolist()
-        yfGyr = fft(vecG)
-        yfGyr = yfGyr.tolist()
+        k = arange(n)
+        T = n / fs
+        freq = k / T  # two sides frequency range
+        freq = freq[range(math.floor(n / 2))]  # one side frequency range
 
-        absAcc = [abs(x) for x in yfAcc]
-        absGyr = [abs(x) for x in yfGyr]
-        powAcc = [(i ** 2) / n for i in absAcc]
-        powGyr = [(i ** 2) / n for i in absGyr]
+        Y_A = fft(vecA) / n  # fft computing and normalization
+        Y_A = Y_A[range(math.floor(n / 2))]
+        powAcc = abs(Y_A)
+
+        Y_G = fft(vecG) / n  # fft computing and normalization
+        Y_G = Y_G[range(math.floor(n / 2))]
+        powGyr = abs(Y_G)
+
+        idx = min(range(len(freq)), key=lambda i: abs(freq[i] - 50))
+        max_powAcc = max(powAcc[1:idx])
+        idx_f = np.where(powAcc == max_powAcc)
+        f_max = freq[idx_f]
+        f_max = f_max.item()
+        f_max = round(f_max, 3)
+        raw = []
+        milig = []
+
+        przelicznik_txt = "przelicznik.txt"
+        path = os.path.join(os.getcwd(), przelicznik_txt)
+        if os.path.isfile(path):
+            file = open(przelicznik_txt, 'r')
+            all_lines = file.readlines()
+            for row in all_lines[1:]:
+                milig.append(float(row.split(',')[0]))
+                raw.append(float(row.split(',')[1]))
+
+        przelicznik = stat.mean(raw) / stat.mean(milig)
+        maxA = max(vecA)
+        minA = min(vecA)
+        maxAmp = max(maxA, -minA)
+        meanVecA = stat.mean(vecA)
+        ampVecA = maxAmp - meanVecA
+        amp_mms2 = ampVecA * przelicznik / 1000
+        omega = 2 * math.pi * f_max
+
+        amp_mm = amp_mms2 / (omega ** 2)
+        print(amp_mm)
+        amp_mm = round(amp_mm, 4)
 
         context = {
             'time': time,
@@ -75,13 +174,16 @@ def calc_results():
             'frequency': freq,
             'powerAcc': powAcc,
             'powerGyr': powGyr,
+            'freq_max': f_max,
+            'amp_mm': amp_mm,
         }
 
         return context
 
 
 def draw_graph(request):
-    context = calc_results()
+    filename = request.session.get('myfilename')
+    context = calc_results(filename)
 
     if context:
         freq = context["frequency"]
@@ -91,14 +193,18 @@ def draw_graph(request):
         fig, ax = plt.subplots(1, 2, figsize=(15, 10))
         plt.subplots_adjust(wspace=0.8)
 
-        ax[0].plot(freq, powAcc)
+        idx = min(range(len(freq)), key=lambda i: abs(freq[i]-50))
+
+        markerline0, stemline0, baseline0 = ax[0].stem(freq[:idx], powAcc[:idx])
+        plt.setp(markerline0, markersize=2)
         ax[0].grid()
         ax[0].set_title("Frequency spectrum of linear acceleration")
         ax[0].set_xlabel("Frequency [Hz]")
         ax[0].set_ylabel("Amplitude [mg]")
         ax[0].set_yscale("log")
 
-        ax[1].plot(freq, powGyr)
+        markerline1, stemline1, baseline1 = ax[1].stem(freq[:idx], powGyr[:idx])
+        plt.setp(markerline1, markersize=2)
         ax[1].grid()
         ax[1].set_title("Frequency spectrum of angular velocity")
         ax[1].set_xlabel("Frequency [Hz]")
@@ -114,14 +220,12 @@ def draw_graph(request):
 
         plt.close()
 
+        freq_max = context['freq_max']
+        request.session['freq_max'] = freq_max
+        amp_mm = context['amp_mm']
+        request.session['amp_mm'] = amp_mm
+
         return response
-
-
-def results(request):
-    context = calc_results()
-    if context:
-        return render(request, 'results.html')
-    return redirect('post-list')
 
 
 def delete_items(request):
@@ -131,3 +235,23 @@ def delete_items(request):
         with connection.cursor() as cursor:
             cursor.execute("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'myimu_sensorsvalue'")
     return redirect('post-list')
+
+
+# def delete_file(request):
+#     today = date.today()
+#     date_str = today.strftime("%d-%m-%Y")
+#     filename = date_str + ".txt"
+#     path = os.path.join(os.getcwd(), filename)
+#     if os.path.isfile(path):
+#         os.remove(filename)
+#         print('File removed')
+#     else:
+#         print("The file does not exist")
+#     return redirect('post-list')
+
+
+def clear_session(request):
+    del request.session['myfilename']
+    del request.session['freq_max']
+    del request.session['amp_mm']
+    return redirect('results')

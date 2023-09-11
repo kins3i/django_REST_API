@@ -1,0 +1,106 @@
+{% load static %}
+<script src="//code.jquery.com/jquery.min.js"></script>
+<link rel="stylesheet"
+      type="text/css"
+      href="{% static '/css/bootstrap.css' %}" >
+<script src="https://kit.fontawesome.com/7e7a3b78ea.js"
+        crossorigin="anonymous"></script>
+
+
+
+<style>
+    .form-control
+    {
+      background-color: #f8f9fa !important;
+    }
+    .page-link,
+    .page-link:hover,
+    .page-link:active,
+    .page-link:focus
+    {
+        color:#636464;
+    }
+    {#.active,#}
+    {#.active:hover,#}
+    {#.active:active,#}
+    {#.active:focus,#}
+    a,
+    a:hover,
+    a:active,
+    a:focus
+    {
+        color: #f8f9fa;
+
+        {#background-color: #e9ecef;#}
+    }
+
+    a
+    {
+        padding: 0.5rem 0.5rem;
+    }
+
+    .vertical-center
+    {
+        display: flex;
+        align-items: center;
+    }
+    .my-width
+    {
+        width: 60%;
+    }
+
+
+</style>
+
+
+<!doctype html>
+<html lang="pl">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+
+        <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4 sticky-top">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#navbarCollapse"
+                        aria-controls="navbarCollapse"
+                        aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarCollapse">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                        <li class="nav-item">
+                            <a class = "link-light" href="/post-list/">
+                                <i class="fa fa-home fa-sm" aria-hidden="true"></i> POST API</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class=link-light" aria-current="page" href="/start/">Start-Stop</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="link-light" aria-current="page" href="/get_file/">Wybierz plik</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="link-light" aria-current="page" href="/results/">Wyniki</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="link-light" aria-current="page" href="/clear_session/">Wyczyść sesję</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+
+        {% block content %}
+        {% endblock %}
+
+
+        <script src="{% static '/js/bootstrap.min.js' %}"></script>
+
+    </body>
+</html>

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block tytul %}Wybierz plik{% endblock %}
+
+{% block content %}
+
+{#    <div class="form=group m-3">#}
+{#        <form method="post" enctype="multipart/form-data">#}
+{#            {% csrf_token %}#}
+{#            {{ form.as_p }}#}
+{#            <button type="submit" class="btn btn-dark m-3">Wprowadź</button>#}
+{#            <button type="reset" class="btn btn-dark m-3">Resetuj</button>#}
+{#        </form>#}
+{#    </div>#}
+
+{#    <form action="/practice/kakao_reader/" method="post" enctype="multipart/form-data">#}
+    <div class="justify-content-center form-group  m-auto align-items-center d-flex h-100">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <p>Plik:</p>
+            <input type="file" name="myfile"/>
+            <button class="btn btn-dark m-3" type="submit">Wprowadź</button>
+            <button class="btn btn-dark m-3" type="reset">Resetuj</button>
+        </form>
+    </div>
+
+{% endblock %}
