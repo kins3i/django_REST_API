@@ -7,6 +7,8 @@ from django.shortcuts import render, redirect
 from django.http.response import HttpResponse
 from rest_framework import viewsets
 from django.db import connection
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 import numpy as np
 import math
@@ -14,7 +16,6 @@ import statistics as stat
 from scipy import arange
 from scipy.fft import fft
 
-from datetime import date
 import os
 import json
 
@@ -30,31 +31,25 @@ class PostViewSet(viewsets.ModelViewSet):
 
 
 def start(request):
-    if request.GET.get('start'):
-        return HttpResponse("start")
-    if request.GET.get('stop'):
-        return HttpResponse("stop")
+    channel_layer = get_channel_layer()
+    if request.POST.get('start'):
+        async_to_sync(channel_layer.group_send)(
+            "echo_group",
+            {
+                'type': 'invoke_start_stop',
+                'message': "start"
+            }
+        )
+        print("Start")
+    if request.POST.get('stop'):
+        async_to_sync(channel_layer.group_send)(
+            "echo_group",
+            {
+                'type': 'invoke_start_stop',
+                'message': "stop"
+            }
+        )
     return render(request, "start.html")
-
-
-def import_json(request):
-    today = date.today()
-    date_str = today.strftime("%d-%m-%Y")
-    filename = date_str + ".txt"
-    path = os.path.join(os.getcwd(), filename)
-    if os.path.isfile(path):
-        file = open(filename, 'r')
-        str_list = file.readlines()
-        json_list = []
-        for row in str_list:
-            json_row = json.loads(row)
-            json_list.append(json_row)
-        for j_row in json_list:
-            obj = serializers.SensorsValueSerializer(data=j_row)
-            if obj.is_valid():
-                obj.save()
-        return render(request, 'results.html')
-    return redirect('post-list')
 
 
 def get_file(request):
@@ -73,6 +68,7 @@ def results(request):
     context = {
         'freq_max': freq_max,
         'amp_mm': amp_mm,
+        'filename': filename,
     }
     if filename:
         return render(request, 'results.html', context)
@@ -82,6 +78,8 @@ def results(request):
 def calc_results(myfilename):
     filename = myfilename
     path = os.path.join(os.getcwd(), filename)
+
+    print(filename)
 
     time = []
     vecA = []
@@ -237,17 +235,15 @@ def delete_items(request):
     return redirect('post-list')
 
 
-# def delete_file(request):
-#     today = date.today()
-#     date_str = today.strftime("%d-%m-%Y")
-#     filename = date_str + ".txt"
-#     path = os.path.join(os.getcwd(), filename)
-#     if os.path.isfile(path):
-#         os.remove(filename)
-#         print('File removed')
-#     else:
-#         print("The file does not exist")
-#     return redirect('post-list')
+def delete_file(request):
+    filename = request.session.get('myfilename')
+    path = os.path.join(os.getcwd(), filename)
+    if os.path.isfile(path):
+        os.remove(filename)
+        print('File removed')
+    else:
+        print("The file does not exist")
+    return redirect('post-list')
 
 
 def clear_session(request):
