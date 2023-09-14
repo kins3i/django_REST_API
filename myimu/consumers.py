@@ -1,5 +1,6 @@
 import time
 import datetime
+import os
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 
@@ -25,16 +26,15 @@ class PostConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
         await self.accept()
-        # await super().connect()
         global model_list
         global filename
         model_list = []
         today = datetime.date.today()
         now = datetime.datetime.now()
-        current_time = datetime.time(now.hour, now.minute)
+        current_time = datetime.time(now.hour, now.minute, now.second)
         name = datetime.datetime.combine(today, current_time)
-        date_str = name.strftime("%d-%m-%Y_%H_%M")
-        filename = date_str + ".txt"
+        date_str = name.strftime("%d-%m-%Y_%H_%M_%S")
+        filename = os.path.join(os.getcwd(), "data_log", date_str, ".txt")
         print(filename)
         print("Connected")
         await self.send('Good connection')
@@ -44,16 +44,13 @@ class PostConsumer(AsyncWebsocketConsumer):
         global model_list
         global filename
         separator = '\n'
-        # print(text_data)
         model_list.append(text_data)
         if len(model_list) >= 500:
             long_str = separator.join(model_list)
             long_str += '\n'
-            # file = open(filename, 'a')
             with open(filename, 'a') as file:
                 file.write(long_str)
             print("add to file time {}.".format((time.time() - start) * 1000))
-            # await self.send('saved')
             model_list = []
         if ((time.time() - start) * 1000) > 0.9:
             print("time {}.".format((time.time() - start) * 1000))
@@ -65,10 +62,6 @@ class PostConsumer(AsyncWebsocketConsumer):
         message = event['message']
         print(message)
         await self.send(message)
-        # Send message to WebSocket
-        # self.send(text_data=json.dumps({
-        #     'message': message
-        # }))
 
     async def disconnect(self, message):
         print("Disconnected")

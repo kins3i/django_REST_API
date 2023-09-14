@@ -77,7 +77,7 @@ def results(request):
 
 def calc_results(myfilename):
     filename = myfilename
-    path = os.path.join(os.getcwd(), filename)
+    path = os.path.join(os.getcwd(), "data_log", filename)
 
     print(filename)
 
@@ -237,7 +237,7 @@ def delete_items(request):
 
 def delete_file(request):
     filename = request.session.get('myfilename')
-    path = os.path.join(os.getcwd(), filename)
+    path = os.path.join(os.getcwd(), "data_log", filename)
     if os.path.isfile(path):
         os.remove(filename)
         print('File removed')
