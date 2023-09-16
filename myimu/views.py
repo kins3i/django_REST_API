@@ -19,9 +19,21 @@ from scipy.fft import fft
 import os
 import json
 
+import re
+import subprocess
+
+_handle_pat = re.compile(r'(.*?)\s+pid:\s+(\d+).*[0-9a-fA-F]+:\s+(.*)')
+
 from . import models, serializers
 matplotlib.use('Agg')
 
+
+def open_files(name):
+    """return a list of (process_name, pid, filename) tuples for
+       open files matching the given name."""
+    lines = subprocess.check_output('handle.exe "%s"' % name).splitlines()
+    res = (_handle_pat.match(line.decode('mbcs')) for line in lines)
+    return [m.groups() for m in res if m]
 
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.SensorsValueSerializer
@@ -72,22 +84,22 @@ def results(request):
     }
     if filename:
         return render(request, 'results.html', context)
-    return redirect('post-list')
+    return redirect('start')
 
 
 def calc_results(myfilename):
     filename = myfilename
-    path = os.path.join(os.getcwd(), "data_log", filename)
+    path = os.path.join(os.getcwd(), r'data_log', filename)
 
-    print(filename)
+    print(path)
 
     time = []
     vecA = []
     vecG = []
 
     if os.path.isfile(path):
-        file = open(filename, 'r')
-        str_list = file.readlines()
+        with open(path, 'r') as file:
+            str_list = file.readlines()
         json_list = []
         for row in str_list:
             json_row = json.loads(row)
@@ -144,10 +156,12 @@ def calc_results(myfilename):
         milig = []
 
         przelicznik_txt = "przelicznik.txt"
-        path = os.path.join(os.getcwd(), przelicznik_txt)
-        if os.path.isfile(path):
-            file = open(przelicznik_txt, 'r')
-            all_lines = file.readlines()
+        path_p = os.path.join(os.getcwd(), przelicznik_txt)
+        if os.path.isfile(path_p):
+            with open(przelicznik_txt, 'r') as file:
+            # file = open(przelicznik_txt, 'r')
+                all_lines = file.readlines()
+            # file.close()
             for row in all_lines[1:]:
                 milig.append(float(row.split(',')[0]))
                 raw.append(float(row.split(',')[1]))
@@ -236,18 +250,22 @@ def delete_items(request):
 
 
 def delete_file(request):
-    filename = request.session.get('myfilename')
-    path = os.path.join(os.getcwd(), "data_log", filename)
-    if os.path.isfile(path):
-        os.remove(filename)
-        print('File removed')
-    else:
-        print("The file does not exist")
-    return redirect('post-list')
+    if request.method == 'POST' and request.FILES['delfile']:
+        delfile = request.FILES['delfile']
+        filename = delfile.name
+        path = os.path.join(os.getcwd(), r'data_log', filename)
+        print(path)
+        try:
+            os.remove(path)
+        except OSError as e:
+            print("Error deleting file: " + str(e))
+        else:
+            return redirect('start')
+    return render(request, 'delete_file.html')
 
 
 def clear_session(request):
     del request.session['myfilename']
     del request.session['freq_max']
     del request.session['amp_mm']
-    return redirect('results')
+    return redirect('start')

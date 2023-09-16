@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block tytul %}Wybierz plik{% endblock %}
+
+{% block content %}
+
+
+    <div class="justify-content-center form-group m-auto align-items-center d-flex h-100 card-body">
+        <form method="post" enctype="multipart/form-data" style="width: 30rem;">
+            {% csrf_token %}
+            <div class="card text-center bg-light">
+                <p class="card-text"> Wybierz plik do usunięcia: </p>
+                <input class="m-auto my-width text-center bg-light" type="file" name="delfile"/>
+            </div>
+
+            <div class="card-group card-body m-auto text-center bg-light">
+                <button class="btn btn-dark m-3 btn-lg col-sm" type="submit">Wprowadź</button>
+                <button class="btn btn-dark m-3 btn-lg col-sm" type="reset">Resetuj</button>
+            </div>
+        </form>
+    </div>
+
+{% endblock %}
