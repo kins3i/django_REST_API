@@ -34,7 +34,7 @@ class PostConsumer(AsyncWebsocketConsumer):
         current_time = datetime.time(now.hour, now.minute, now.second)
         name = datetime.datetime.combine(today, current_time)
         date_str = name.strftime("%d-%m-%Y_%H_%M_%S")
-        filename = os.path.join(os.getcwd(), "data_log", date_str, ".txt")
+        filename = os.path.join(os.getcwd(), "data_log", date_str+".txt")
         print(filename)
         print("Connected")
         await self.send('Good connection')
@@ -57,10 +57,9 @@ class PostConsumer(AsyncWebsocketConsumer):
             # print("Message received")
 
     async def invoke_start_stop(self, event):
-        print("EVENT TRIGGERED")
-        # Receive message from room group
+        # Receive message from room group (exactly from button view)
         message = event['message']
-        print(message)
+        print("EVENT TRIGGERED: ", message)
         await self.send(message)
 
     async def disconnect(self, message):
