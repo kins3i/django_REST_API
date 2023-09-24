@@ -10,22 +10,15 @@
                name="calculate" onClick="window.location.reload()">
         </div>
 
-
         <br>
-{#        <div class="card m-auto my-width text-center bg-light">#}
+
         <div class="card m-auto text-center bg-light">
-            <img class = "rounded-start mx-auto card-img"
-            src="/graph"
-
-              class="rounded-start mx-auto card-img"
-                width="1000rem"
-
-            width="100%"
-            height="50%"
-            alt="">
+            {#              this works, but is not pretty  #}
+{#            <img class = "rounded-start mx-auto card-img" src="/graph" alt=""> #}
+            {#              this works too, but is pretty and doesn't raise warning  #}
+            <img class = "rounded-start mx-auto card-img" src="{% url 'graph' %}" alt="">
             File: {{ filename }}
         </div>
-
 
         <br>
 
