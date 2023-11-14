@@ -12,15 +12,12 @@ For proper usage of project necessary is: downloading relevant libraries for
 Python interpreter and set run configuration.
 1. Libraries
     * Django
-    * channels
-    * channels-redis
     * daphne
-    * djangochannelsrestframework
     * djangorestframework
+    * djangochannelrestframework
+    * channels
     * matplotlib
     * numpy
-    * redis
-    * requests
     * scipy
     * webserver
 2. Run configuration
