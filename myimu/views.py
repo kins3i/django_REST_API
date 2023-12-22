@@ -90,27 +90,35 @@ def calc_results(myfilename):
     if os.path.isfile(path):
         with open(path, 'r') as file:
             str_list = file.readlines()
-        json_list = []
-        for row in str_list:
-            json_row = json.loads(row)
-            json_list.append(json_row)
-        for j_row in json_list:
-            time.append(j_row['timer'])
+        for row in str_list[8:]:
+            # print(row)
+            # print(type(row))
+            row_str = row.replace(' ', '').replace(',', '.')
+            # print(row_str)
+            print(row_str.split(';')[5])
+            print(int(row_str.split(';')[5]))
+            time.append(int(row_str.split(';')[5]))
             if (len(time) > 2) and (time[-1] - time[-2] != time[1] - time[0]):
                 time.pop()
                 break
-            accX = j_row['accX']
-            accY = j_row['accY']
-            accZ = j_row['accZ']
-            gyrX = j_row['gyrX']
-            gyrY = j_row['gyrY']
-            gyrZ = j_row['gyrZ']
-            tempA = [accX / 1000, accY / 1000, accZ / 1000]
+            accX = float(row_str.split(';')[6])
+            accY = float(row_str.split(';')[7])
+            accZ = float(row_str.split(';')[8])
+            gyrX = float(row_str.split(';')[9])
+            gyrY = float(row_str.split(';')[10])
+            gyrZ = float(row_str.split(';')[11])
+
+            tempA = [accX, accY, accZ]
+            # tempA = [accX / 1000, accY / 1000, accZ / 1000]
             num = math.sqrt(tempA[0] ** 2 + tempA[1] ** 2 + tempA[2] ** 2)          # calc vec of acc
             vecA.append(num)
-            tempG = [gyrX / 1000, gyrY / 1000, gyrZ / 1000]
+            tempG = [gyrX, gyrY, gyrZ]
+            # tempG = [gyrX / 1000, gyrY / 1000, gyrZ / 1000]
             num = math.sqrt(tempG[0] ** 2 + tempG[1] ** 2 + tempG[2] ** 2)          # calc vec of gyr
             vecG.append(num)
+
+            print(vecA)
+            print(vecG)
 
         if len(vecA) % 2 != 0:                                                      # check if number of samples is even
             # delete last uneven sample
