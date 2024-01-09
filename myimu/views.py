@@ -78,29 +78,56 @@ def results(request):
 
 def calc_results(myfilename):
     filename = myfilename
-    path = os.path.join(os.getcwd(), r'data_log', filename)
+    path = os.path.join(os.getcwd(), r'IMU_Logi', filename)
 
     print(path)
 
     time = []
     vecA = []
     vecG = []
+    missed_time = []
 
     # read data from file
     if os.path.isfile(path):
         with open(path, 'r') as file:
             str_list = file.readlines()
-        for row in str_list[8:]:
-            # print(row)
-            # print(type(row))
+        for row in str_list[9:]:
             row_str = row.replace(' ', '').replace(',', '.')
-            # print(row_str)
-            print(row_str.split(';')[5])
-            print(int(row_str.split(';')[5]))
             time.append(int(row_str.split(';')[5]))
-            if (len(time) > 2) and (time[-1] - time[-2] != time[1] - time[0]):
-                time.pop()
-                break
+            if len(time) == 2:
+                dt_read = time[1] - time[0]
+            if (len(time) > 2) and (time[-1] - time[-2] != dt_read):
+                print("last correct time: ", time[-2])
+                if time[-1] - time[-2] != 2*dt_read:
+                    time.pop()
+                    break
+                else:
+                    missed_time.append((time[-1] - time[-2]) / 2)
+                    if len(missed_time) > 2 and (missed_time[-1] - missed_time[-2] == dt_read):
+                        time.pop()
+                        break
+                    time.pop()
+
+                    accX = float(row_str.split(';')[6])
+                    accY = float(row_str.split(';')[7])
+                    accZ = float(row_str.split(';')[8])
+                    gyrX = float(row_str.split(';')[9])
+                    gyrY = float(row_str.split(';')[10])
+                    gyrZ = float(row_str.split(';')[11])
+
+                    tempA = [accX, accY, accZ]
+                    num = math.sqrt(tempA[0] ** 2 + tempA[1] ** 2 + tempA[2] ** 2)
+                    meanA = stat.mean([num, vecA[-1]])
+                    tempG = [gyrX, gyrY, gyrZ]
+                    num = math.sqrt(tempG[0] ** 2 + tempG[1] ** 2 + tempG[2] ** 2)
+                    meanG = stat.mean([num, vecG[-1]])
+
+                    time.append(missed_time)
+                    vecA.append(meanA)
+                    vecG.append(meanG)
+
+                    time.append(int(row_str.split(';')[5]))
+
             accX = float(row_str.split(';')[6])
             accY = float(row_str.split(';')[7])
             accZ = float(row_str.split(';')[8])
@@ -109,22 +136,24 @@ def calc_results(myfilename):
             gyrZ = float(row_str.split(';')[11])
 
             tempA = [accX, accY, accZ]
-            # tempA = [accX / 1000, accY / 1000, accZ / 1000]
             num = math.sqrt(tempA[0] ** 2 + tempA[1] ** 2 + tempA[2] ** 2)          # calc vec of acc
             vecA.append(num)
             tempG = [gyrX, gyrY, gyrZ]
-            # tempG = [gyrX / 1000, gyrY / 1000, gyrZ / 1000]
             num = math.sqrt(tempG[0] ** 2 + tempG[1] ** 2 + tempG[2] ** 2)          # calc vec of gyr
             vecG.append(num)
 
-            print(vecA)
-            print(vecG)
+            # print(vecA)
+            # print(vecG)
+        print("Last saved time: ", time[-1])
 
         if len(vecA) % 2 != 0:                                                      # check if number of samples is even
             # delete last uneven sample
             time.pop()
             vecA.pop()
             vecG.pop()
+
+        n_time = len(time)
+        print("n_time: ", n_time)
 
         # calculate moving average on acc and gyr
         avgVecA = []
@@ -167,8 +196,11 @@ def calc_results(myfilename):
 
         # count sample rate
         n = len(vecA)
-        print("n", n)
+        # print("n: ", n)
+
         dt = stat.mean(np.diff(time))
+        print("dt: ", dt)
+        # print("t: ", time)
         fs = 1 / (dt / 1000)
         fs = fs.item()
 
