@@ -86,16 +86,24 @@ def calc_results(myfilename):
     vecA = []
     vecG = []
     missed_time = []
+    dt_read = 0
+    start_row = 20
 
     # read data from file
     if os.path.isfile(path):
         with open(path, 'r') as file:
             str_list = file.readlines()
-        for row in str_list[9:]:
+        for row in str_list[8+start_row:]:
             row_str = row.replace(' ', '').replace(',', '.')
+            check_str_NaN = row_str.find('NaN')
+            if check_str_NaN != -1:
+                print("Broken row: ", row_str)
+                break
             time.append(int(row_str.split(';')[5]))
             if len(time) == 2:
                 dt_read = time[1] - time[0]
+                if dt_read == 0:
+                    break
             if (len(time) > 2) and (time[-1] - time[-2] != dt_read):
                 print("last correct time: ", time[-2])
                 if time[-1] - time[-2] != 2*dt_read:
@@ -141,6 +149,14 @@ def calc_results(myfilename):
             tempG = [gyrX, gyrY, gyrZ]
             num = math.sqrt(tempG[0] ** 2 + tempG[1] ** 2 + tempG[2] ** 2)          # calc vec of gyr
             vecG.append(num)
+
+            if np.isnan(vecA[-1]) or np.isnan(vecG[-1]):
+                time.pop()
+                vecA.pop()
+                vecG.pop()
+                break
+
+
 
             # print(vecA)
             # print(vecG)
