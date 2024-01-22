@@ -14,7 +14,7 @@ Python interpreter and set run configuration.
     * Django
     * daphne
     * djangorestframework
-    * djangochannelrestframework
+    * djangochannelsrestframework
     * channels
     * matplotlib
     * numpy
