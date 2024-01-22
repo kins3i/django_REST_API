@@ -13,12 +13,10 @@ from asgiref.sync import async_to_sync
 import numpy as np
 import math
 import statistics as stat
-from scipy import arange
 import scipy.signal as signal
 from scipy.fft import fft
 
 import os
-import json
 
 from . import models, serializers
 matplotlib.use('Agg')
@@ -157,13 +155,11 @@ def calc_results(myfilename):
                 vecG.pop()
                 break
 
-
-
             # print(vecA)
             # print(vecG)
         print("Last saved time: ", time[-1])
 
-        # if len(vecA) % 2 != 0:                                                      # check if number of samples is even
+        # if len(vecA) % 2 != 0:                                                   # check if number of samples is even
         #     # delete last uneven sample
         #     time.pop()
         #     vecA.pop()
@@ -257,11 +253,10 @@ def calc_results(myfilename):
         vecG = signal.lfilter(iir_b, iir_a, vecG)
 
         # create list of frequencies
-        k = arange(n)
+        k = np.arange(n)
         T = n / fs
         freq1 = k / T  # two sides frequency range
         freq = freq1[range(math.floor(n / 2))]  # one side frequency range
-
 
         # FFT of acc
         Y_A = fft(vecA) / n  # fft computing and normalization
