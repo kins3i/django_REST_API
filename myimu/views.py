@@ -88,12 +88,13 @@ def calc_results(myfilename):
     missed_time = []
     dt_read = 0
     start_row = 20
+    end_row = 10000+5
 
     # read data from file
     if os.path.isfile(path):
         with open(path, 'r') as file:
             str_list = file.readlines()
-        for row in str_list[8+start_row:]:
+        for row in str_list[8+start_row:end_row+8+start_row]:
             row_str = row.replace(' ', '').replace(',', '.')
             check_str_NaN = row_str.find('NaN')
             if check_str_NaN != -1:
@@ -162,11 +163,11 @@ def calc_results(myfilename):
             # print(vecG)
         print("Last saved time: ", time[-1])
 
-        if len(vecA) % 2 != 0:                                                      # check if number of samples is even
-            # delete last uneven sample
-            time.pop()
-            vecA.pop()
-            vecG.pop()
+        # if len(vecA) % 2 != 0:                                                      # check if number of samples is even
+        #     # delete last uneven sample
+        #     time.pop()
+        #     vecA.pop()
+        #     vecG.pop()
 
         n_time = len(time)
         print("n_time: ", n_time)
@@ -191,6 +192,12 @@ def calc_results(myfilename):
         vecA = avgVecA
         vecG = avgVecG
 
+        if len(vecA) % 2 != 0:                                                      # check if number of samples is even
+            # delete last uneven sample
+            time.pop()
+            vecA.pop()
+            vecG.pop()
+
         # read file for conversion of units (from mg to m/s2)
         raw = []
         milig = []
@@ -212,7 +219,7 @@ def calc_results(myfilename):
 
         # count sample rate
         n = len(vecA)
-        # print("n: ", n)
+        print("n: ", n)
 
         dt = stat.mean(np.diff(time))
         print("dt: ", dt)
@@ -255,6 +262,7 @@ def calc_results(myfilename):
         freq1 = k / T  # two sides frequency range
         freq = freq1[range(math.floor(n / 2))]  # one side frequency range
 
+
         # FFT of acc
         Y_A = fft(vecA) / n  # fft computing and normalization
         Y_A = Y_A[range(math.floor(n / 2))]
@@ -290,11 +298,11 @@ def calc_results(myfilename):
         amp_mm = round(amp_m*1000, 3)
 
         # some printing for debugging calculations
-        print("meanVecA ", meanVecA)
-        print("ampVecA ", ampVecA)
-        print("amp_ms2 ", amp_ms2)
-        print("omega ", omega)
-        print("amp_m ", amp_m)
+        # print("meanVecA ", meanVecA)
+        # print("ampVecA ", ampVecA)
+        # print("amp_ms2 ", amp_ms2)
+        # print("omega ", omega)
+        # print("amp_m ", amp_m)
         print("amp_mm", amp_mm)
 
         f_max = round(f_max, 3)
